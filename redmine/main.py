@@ -38,8 +38,12 @@ def get_rd(cfg_data):
 
 
 @click.group('RedmineCli')
+@click.option('-v', '--version', 'version', is_flag=True)
 @click.pass_context
-def cli(ctx):
+def cli(ctx, version):
+    if version:
+        from . import __version__
+        console.print(f'App version {".".join(map(str, __version__))}', style='bold magenta')
     ctx.ensure_object(dict)
     ctx.obj['redmine'] = get_rd(cfg)
 
