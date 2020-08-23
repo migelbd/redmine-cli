@@ -21,10 +21,10 @@ cfg.init('redmine.password', '')
 cfg.init('redmine.token', '')
 cfg.init('project.id', '')
 cfg.init('release.tracker_id', 6, int)
-cfg.init('release.subject', 'Релиз %s')
+cfg.init('release.subject', 'Релиз %s', str)
 cfg.init('release.done_status_id', 12, int)
-cfg.init('release.filter_custom_fields', ['13', '2'], list)
-cfg.init('issue.filter_custom_fields', ['13', '2'], list)
+cfg.init('release.filter_custom_fields', [], list)
+cfg.init('issue.filter_custom_fields', [], list)
 cfg.init('user.me_query_id', 0, int)
 
 
@@ -83,8 +83,8 @@ def config(file):
         selected_tracker = questionary.select('Выберите трекер с релизами', list(tracker_map.keys())).ask()
         selected_status = questionary.select('Выберите статус опубликованого релиза', list(status_map.keys())).ask()
 
-        config_data['release.tracker_id'] = tracker_map[selected_tracker]
-        config_data['release.done_status_id'] = status_map[selected_status]
+        config_data['release.tracker_id'] = tracker_map[selected_tracker].id
+        config_data['release.done_status_id'] = status_map[selected_status].id
 
         if questionary.confirm('Сохранить').ask():
             cfg.update(config_data.items())
