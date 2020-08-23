@@ -48,7 +48,7 @@ setup(
     tests_require=[],
     entry_points={
         'console_scripts': [
-            'redmine = cli:main',
+            'redmine = redmine.main:main',
         ]
     }
 )
