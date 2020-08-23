@@ -1,13 +1,14 @@
 import os
+from webbrowser import open as open_web_url
 
 import click
 import profig
 import questionary
-from redminelib import Redmine
 from prettytable import PrettyTable
+from redminelib import Redmine
+
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
     get_current_project_version, get_trackers_project, get_row_data
-from webbrowser import open as open_web_url
 
 HOME_PATH = os.getenv('USERPROFILE')
 CFG_PATH = os.path.join(HOME_PATH, '.redmine.cfg')
@@ -18,11 +19,11 @@ cfg.init('redmine.username', '')
 cfg.init('redmine.password', '')
 cfg.init('redmine.token', '')
 cfg.init('project.id', '')
-cfg.init('release.tracker_id', 6)
+cfg.init('release.tracker_id', 6, int)
 cfg.init('release.subject', 'Релиз %s')
-cfg.init('release.done_status_id', 12)
-cfg.init('release.filter_custom_fields', [13, 2], list)
-cfg.init('issue.filter_custom_fields', [13, 2], list)
+cfg.init('release.done_status_id', 12, int)
+cfg.init('release.filter_custom_fields', ['13', '2'], list)
+cfg.init('issue.filter_custom_fields', ['13', '2'], list)
 cfg.init('user.me_query_id', 0, int)
 
 
