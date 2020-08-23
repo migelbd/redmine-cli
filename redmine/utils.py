@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import Union
 
 
 def get_last_versions(rd, project_id):
@@ -37,3 +38,24 @@ def gen_number_release() -> list:
             numb = f'{year}.{week + i}.{num}'
             numbers.append(numb)
     return numbers
+
+
+def get_current_project_version(rd, project_id):
+    today = date.today()
+    versions = [v for v in rd.version.filter(project_id=project_id) if hasattr(v, 'due_date') and v.due_date >= today]
+    return versions[0] if len(versions) else None
+
+
+def get_trackers_project(rd, project_id):
+    project = rd.project.get(project_id, include=['trackers'])
+    return project.trackers
+
+
+def get_row_data(item, fields_data: Union[list, tuple]) -> list:
+    row = []
+    for attr in fields_data:
+        value = '-'
+        if hasattr(item, attr):
+            value = getattr(item, attr)
+        row.append(value)
+    return row
