@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from webbrowser import open as open_web_url
 from rich.console import Console
-
+from . import __version__
 import click
 import profig
 import questionary
@@ -37,13 +37,9 @@ def get_rd(cfg_data):
                    key=cfg_data['redmine.token'])
 
 
-@click.group('RedmineCli')
-@click.option('-v', '--version', 'version', is_flag=True)
+@click.group('RedmineCli', help=f'Redmine CLI Tool version {".".join(map(str, __version__))}')
 @click.pass_context
 def cli(ctx, version):
-    if version:
-        from . import __version__
-        console.print(f'App version {".".join(map(str, __version__))}', style='bold magenta')
     ctx.ensure_object(dict)
     ctx.obj['redmine'] = get_rd(cfg)
 
