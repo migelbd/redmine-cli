@@ -39,7 +39,7 @@ def get_rd(cfg_data):
 
 @click.group('RedmineCli', help=f'Redmine CLI Tool version {".".join(map(str, __version__))}')
 @click.pass_context
-def cli(ctx, version):
+def cli(ctx):
     ctx.ensure_object(dict)
     ctx.obj['redmine'] = get_rd(cfg)
 
