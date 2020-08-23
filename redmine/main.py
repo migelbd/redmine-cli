@@ -271,7 +271,7 @@ def issue_list(ctx, assigned_current, is_open, limit, version):
             if 0 < done_ratio < 100:
                 style = 'yellow'
             elif done_ratio == 100:
-                style = 'green'
+                style = 'bright_green'
 
             tb.add_row(*get_row_data(iss, fields_data), style=style)
         except Exception as e:
@@ -347,7 +347,7 @@ def issue_create(ctx, open_url):
 def issue_query(ctx, limit, offset, saved):
     """Сохраненные запросы"""
     rd = ctx.obj['redmine']
-    tb = PrettyTable(('#', 'Наименование', 'Статус', 'Готовность', 'Назначена', 'Автор', 'Версия',))
+    tb = get_table_for_issues()
 
     if saved:
         q_text = 'Выберите сохраненый запрос. Выбор будет сохранен в настройки'
@@ -374,10 +374,17 @@ def issue_query(ctx, limit, offset, saved):
     )
     for iss in rd.issue.filter(offset=offset, limit=limit, project_id=selected_query.project_id,
                                query_id=selected_query.id):
+        style = None
         row = get_row_data(iss, fields_data)
-        tb.add_row(row)
+        done_ratio = int(row[3])
+        if 0 < done_ratio < 100:
+            style = 'yellow'
+        elif done_ratio == 100:
+            style = 'bright_green'
 
-    click.echo(tb.get_string())
+        tb.add_row(*get_row_data(iss, fields_data), style=style)
+
+    console.print(tb)
 
 
 @cli.command('open')
