@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from webbrowser import open as open_web_url
 
 import click
@@ -8,7 +9,7 @@ from prettytable import PrettyTable
 from redminelib import Redmine
 
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
-    get_current_project_version, get_trackers_project, get_row_data
+    get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects
 
 HOME_PATH = os.getenv('USERPROFILE')
 CFG_PATH = os.path.join(HOME_PATH, '.redmine.cfg')
@@ -27,16 +28,17 @@ cfg.init('issue.filter_custom_fields', ['13', '2'], list)
 cfg.init('user.me_query_id', 0, int)
 
 
-def get_rd():
-    return Redmine(cfg['redmine.host'],
-                   username=cfg['redmine.username'], password=cfg['redmine.password'], key=cfg['redmine.token'])
+def get_rd(cfg_data):
+    return Redmine(cfg_data['redmine.host'],
+                   username=cfg_data['redmine.username'], password=cfg_data['redmine.password'],
+                   key=cfg_data['redmine.token'])
 
 
 @click.group('RedmineCli')
 @click.pass_context
 def cli(ctx):
     ctx.ensure_object(dict)
-    ctx.obj['redmine'] = get_rd()
+    ctx.obj['redmine'] = get_rd(cfg)
 
 
 @cli.command()
@@ -46,20 +48,48 @@ def config(file):
     if file:
         click.echo(CFG_PATH)
     else:
-        config_data = {}
+        config_data = defaultdict(lambda: "")
         config_data['redmine.host'] = questionary.text('Укажите URL').ask()
-        config_data['redmine.token'] = questionary.text('Укажите Token').ask()
-        if not config_data['redmine.token']:
+        auth_method = questionary.select('Выберите метод авторизации', ['Token', 'Login']).ask()
+
+        if auth_method == 'Token':
+            config_data['redmine.token'] = questionary.password('Укажите Token').ask()
+        elif auth_method == 'Login':
             config_data['redmine.username'] = questionary.text('Укажите Логин').ask()
-            config_data['redmine.password'] = questionary.text('Укажите Пароль').ask()
+            config_data['redmine.password'] = questionary.password('Укажите Пароль').ask()
 
-        config_data['project.id'] = questionary.text('Укажите ProjectID').ask()
+        rd = get_rd(config_data)
 
-        for name, value in config_data.items():
-            click.echo(f'{name}: {value}')
-        if questionary.confirm('Всё верно?').ask():
+        projects = get_projects(rd)
+        projects_map = {str(v): v for v in projects}
+        selected_project = questionary.select('Укажите ProjectID', list(projects_map.keys())).ask()
+        config_data['project.id'] = projects_map[selected_project].id
+        cf_fields = get_custom_fields(rd)
+        cf_fields_map = {str(v): cf_id for cf_id, v in cf_fields.items()}
+        cf_filter_selected = questionary.checkbox('Какие настраиваемые поля использовать?',
+                                                  choices=list(cf_fields_map.keys())).ask()
+        cf_filter_selected_release = questionary.checkbox('Какие настраиваемые поля использовать для релиза?',
+                                                          choices=list(cf_fields_map.keys())).ask()
+
+        config_data['release.filter_custom_fields'] = list(map(str, [cf_fields_map[cf] for cf in cf_filter_selected]))
+        config_data['issue.filter_custom_fields'] = list(
+            map(str, [cf_fields_map[cf] for cf in cf_filter_selected_release]))
+
+        tracker = get_trackers_project(rd, config_data['project.id'])
+        statuses = get_status_project(rd)
+        status_map = {str(v): v for v in statuses}
+        tracker_map = {str(v): v for v in tracker}
+
+        selected_tracker = questionary.select('Выберите трекер с релизами', list(tracker_map.keys())).ask()
+        selected_status = questionary.select('Выберите статус опубликованого релиза', list(status_map.keys())).ask()
+
+        config_data['release.tracker_id'] = tracker_map[selected_tracker]
+        config_data['release.done_status_id'] = status_map[selected_status]
+
+        if questionary.confirm('Сохранить').ask():
             cfg.update(config_data.items())
             cfg.sync()
+            click.secho('Сохраннено', bold=True)
 
 
 @cli.command('versions')

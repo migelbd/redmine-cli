@@ -59,3 +59,11 @@ def get_row_data(item, fields_data: Union[list, tuple]) -> list:
             value = getattr(item, attr)
         row.append(value)
     return row
+
+
+def get_status_project(rd):
+    return rd.issue_status.all()
+
+
+def get_projects(rd):
+    return rd.project.all()
