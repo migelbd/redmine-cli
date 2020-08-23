@@ -57,7 +57,7 @@ def get_row_data(item, fields_data: Union[list, tuple]) -> list:
         value = '-'
         if hasattr(item, attr):
             value = getattr(item, attr)
-        row.append(value)
+        row.append(str(value))
     return row
 
 

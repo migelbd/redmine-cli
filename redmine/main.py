@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from webbrowser import open as open_web_url
+from rich.console import Console
 
 import click
 import profig
@@ -10,7 +11,9 @@ from redminelib import Redmine
 
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
     get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects
+from redmine.tables import get_table_for_release, get_table_for_issues
 
+console = Console()
 HOME_PATH = os.getenv('USERPROFILE')
 CFG_PATH = os.path.join(HOME_PATH, '.redmine.cfg')
 cfg = profig.Config(CFG_PATH, encoding='utf-8')
@@ -174,16 +177,16 @@ def release_create(ctx, open_url):
 def release_list(ctx, all_list, limit, me):
     """Список релизов"""
     rd = ctx.obj['redmine']
-    tb = PrettyTable(('#', 'Наименование', 'Статус', 'Назначено', 'Автор',))
+    tb = get_table_for_release()
     if not all_list:
         click.echo('Не опубликованные релизы')
     for iss in rd.issue.filter(project_id=cfg['project.id'], tracker_id=cfg['release.tracker_id'],
                                sort='created_on:desc', limit=limit, assigned_to_id='me' if me else '*'):
         if iss.status.id != int(cfg['release.done_status_id']) or all_list:
             row = get_row_data(iss, ['id', 'subject', 'status', 'assigned_to', 'author'])
-            tb.add_row(row)
+            tb.add_row(*row)
 
-    click.echo(tb.get_string())
+    console.print(tb)
 
 
 @cli.command('custom_field')
@@ -223,7 +226,7 @@ def issue():
 @click.pass_context
 def issue_list(ctx, assigned_current, is_open, limit, version):
     """Список задач"""
-    tb = PrettyTable(('#', 'Наименование', 'Статус', 'Готовность', 'Назначена', 'Автор', 'Версия',))
+    tb = get_table_for_issues()
     rd = ctx.obj['redmine']
     versions = get_last_versions(rd, cfg['project.id'])
     versions_map = {str(v): v for v in versions}
@@ -262,10 +265,18 @@ def issue_list(ctx, assigned_current, is_open, limit, version):
                 continue
             if version and not hasattr(iss, 'fixed_version'):
                 continue
-            tb.add_row(get_row_data(iss, fields_data))
+            style = None
+            row = get_row_data(iss, fields_data)
+            done_ratio = int(row[3])
+            if 0 < done_ratio < 100:
+                style = 'yellow'
+            elif done_ratio == 100:
+                style = 'green'
+
+            tb.add_row(*get_row_data(iss, fields_data), style=style)
         except Exception as e:
             click.echo(str(e), err=True)
-    click.echo(tb.get_string())
+    console.print(tb)
 
 
 @issue.command('create')
