@@ -38,7 +38,7 @@ setup(
     packages=['redmine'],
     include_package_data=True,
     classifiers=[
-        'Development Status :: 1 - Alpha',
+        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
