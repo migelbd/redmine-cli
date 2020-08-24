@@ -1,3 +1,4 @@
+import datetime
 from datetime import date, timedelta
 from typing import Union
 
@@ -67,3 +68,40 @@ def get_status_project(rd):
 
 def get_projects(rd):
     return rd.project.all()
+
+
+def iso_year_start(iso_year):
+    "The gregorian calendar date of the first day of the given ISO year"
+    fourth_jan = datetime.date(iso_year, 1, 4)
+    delta = datetime.timedelta(fourth_jan.isoweekday()-1)
+    return fourth_jan - delta
+
+
+def iso_to_gregorian(iso_year, iso_week, iso_day):
+    "Gregorian calendar date for the given ISO year, week and day"
+    year_start = iso_year_start(iso_year)
+    return year_start + datetime.timedelta(days=iso_day-1, weeks=iso_week-1)
+
+
+def generate_versions(init_version, count=10):
+    from datetime import date
+    today = date.today()
+    current_year = today.strftime('%y')
+
+    for _ in range(count):
+        init_version += 1
+        name = f'y{current_year}w{init_version}'
+        due_date = iso_to_gregorian(today.year, init_version, 7)
+        yield name, due_date
+
+
+def is_last_version_app():
+    from requests import get as get_url
+    from . import __version__ as current_version
+
+    response = get_url('https://pypi.org/pypi/Redmine-CLI-Tool/json')
+    if response.status_code != 200:
+        return True
+    data = response.json()
+    pypi_version = tuple(map(int, str(data['info']['version']).split('.')))
+    return current_version >= pypi_version

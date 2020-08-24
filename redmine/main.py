@@ -10,7 +10,8 @@ from prettytable import PrettyTable
 from redminelib import Redmine
 
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
-    get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects
+    get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects, \
+    generate_versions, is_last_version_app
 from redmine.tables import get_table_for_release, get_table_for_issues, get_table_for_versions
 
 console = Console()
@@ -29,6 +30,7 @@ cfg.init('release.done_status_id', 12, int)
 cfg.init('release.filter_custom_fields', [], list)
 cfg.init('issue.filter_custom_fields', [], list)
 cfg.init('user.me_query_id', 0, int)
+cfg.init('user.check_updates', True, bool)
 
 
 def get_rd(cfg_data):
@@ -119,16 +121,30 @@ def versions_list(ctx):
 
     console.print(tb)
 
+
 @versions.command('gen')
+@click.option('--count', 'versions_count', help='Кол-во версий', default=10, show_default=True)
+@click.option('--fake', 'fake_create', help='Не создавать версии', is_flag=True)
 @click.pass_context
-def versions_gen(ctx):
+def versions_gen(ctx, versions_count, fake_create):
     """Создание новых версий"""
     rd = ctx.obj['redmine']
+    tb = get_table_for_versions('Созданые версии проекта')
     current_version = get_current_project_version(rd, cfg['project.id'])
-    versions = get_last_versions(rd, cfg['project.id'])
+    versions = list(get_last_versions(rd, cfg['project.id']))
+    last_version = int(str(versions[0]).split('w')[-1])
+    for name, due_date in generate_versions(last_version, versions_count):
+        if not fake_create:
+            rd.version.create(
+                project_id=current_version.project.id,
+                name=name,
+                status='open',
+                sharing=current_version.sharing,
+                due_date=due_date
+            )
+        tb.add_row(name, str(due_date), '')
 
-
-
+    console.print(tb)
 
 
 @cli.group()
@@ -425,6 +441,8 @@ def open_issue(ctx, issue_id):
 
 def main():
     cfg.sync()
+    if cfg['user.check_updates'] and not is_last_version_app():
+        console.print('Обнаружена новая версия. Выполните pip install -U redmine-cli-tool', style='bold bright_red')
     cli(obj={})
 
 

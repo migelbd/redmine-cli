@@ -25,8 +25,8 @@ def get_table_for_release() -> Table:
     return tb
 
 
-def get_table_for_versions() -> Table:
-    tb = Table(show_header=True, header_style='bold magenta', caption='Версии проекта')
+def get_table_for_versions(caption='Версии проекта') -> Table:
+    tb = Table(show_header=True, header_style='bold magenta', caption=caption)
     tb.add_column('№', style='dim')
     tb.add_column('Дата')
     tb.add_column('Создано')
