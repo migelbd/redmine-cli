@@ -30,7 +30,6 @@ cfg.init('release.done_status_id', 12, int)
 cfg.init('release.filter_custom_fields', [], list)
 cfg.init('issue.filter_custom_fields', [], list)
 cfg.init('user.me_query_id', 0, int)
-cfg.init('user.check_updates', True, bool)
 
 
 def get_rd(cfg_data):
@@ -99,6 +98,7 @@ def config(file):
 
 @cli.group()
 def versions():
+    """Версии проекта"""
     pass
 
 
@@ -441,8 +441,6 @@ def open_issue(ctx, issue_id):
 
 def main():
     cfg.sync()
-    if cfg['user.check_updates'] and not is_last_version_app():
-        console.print('Обнаружена новая версия. Выполните pip install -U redmine-cli-tool', style='bold bright_red')
     cli(obj={})
 
 
