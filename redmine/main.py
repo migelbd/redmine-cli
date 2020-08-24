@@ -11,7 +11,7 @@ from redminelib import Redmine
 
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
     get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects
-from redmine.tables import get_table_for_release, get_table_for_issues
+from redmine.tables import get_table_for_release, get_table_for_issues, get_table_for_versions
 
 console = Console()
 HOME_PATH = os.getenv('USERPROFILE')
@@ -95,17 +95,40 @@ def config(file):
             click.secho('Сохраннено', bold=True)
 
 
-@cli.command('versions')
+@cli.group()
+def versions():
+    pass
+
+
+@versions.command('list')
 @click.pass_context
 def versions_list(ctx):
     """Версии проекта"""
     rd = ctx.obj['redmine']
+    tb = get_table_for_versions()
     versions = get_last_versions(rd, cfg['project.id'])
     current_version = get_current_project_version(rd, cfg['project.id'])
     click.secho(f'Текущая версия: {str(current_version)}', bold=True)
     click.echo('----')
     for v in versions:
-        click.echo(v)
+        row = get_row_data(v, ['name', 'due_date', 'created_on'])
+        style = None
+        if row[0] == str(current_version):
+            style = 'bright_red'
+        tb.add_row(*row, style=style)
+
+    console.print(tb)
+
+@versions.command('gen')
+@click.pass_context
+def versions_gen(ctx):
+    """Создание новых версий"""
+    rd = ctx.obj['redmine']
+    current_version = get_current_project_version(rd, cfg['project.id'])
+    versions = get_last_versions(rd, cfg['project.id'])
+
+
+
 
 
 @cli.group()
