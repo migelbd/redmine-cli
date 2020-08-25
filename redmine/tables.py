@@ -31,3 +31,10 @@ def get_table_for_versions(caption='Версии проекта') -> Table:
     tb.add_column('Дата')
     tb.add_column('Создано')
     return tb
+
+
+def get_table() -> Table:
+    tb = Table(show_header=False, show_lines=True, box=box.SIMPLE)
+    tb.add_column(style='dim')
+    tb.add_column()
+    return tb

@@ -8,11 +8,14 @@ import profig
 import questionary
 from prettytable import PrettyTable
 from redminelib import Redmine
+from rich.columns import Columns
+from rich.panel import Panel
+from rich.markdown import Markdown
 
 from redmine.utils import get_last_versions, gen_number_release, get_memberships, get_custom_fields, get_cf_values, \
     get_current_project_version, get_trackers_project, get_row_data, get_status_project, get_projects, \
     generate_versions, is_last_version_app
-from redmine.tables import get_table_for_release, get_table_for_issues, get_table_for_versions
+from redmine.tables import get_table_for_release, get_table_for_issues, get_table_for_versions, get_table
 
 console = Console()
 HOME_PATH = os.getenv('USERPROFILE')
@@ -424,6 +427,24 @@ def issue_query(ctx, limit, offset, saved):
         tb.add_row(*get_row_data(iss, fields_data), style=style)
 
     console.print(tb)
+
+
+@issue.command('detail')
+@click.argument('issue_id')
+@click.pass_context
+def issue_detail(ctx, issue_id):
+    """Детали задачи"""
+    rd = ctx.obj['redmine']
+    issue = rd.issue.get(issue_id)
+    console.rule(f'Задача #{issue.id}')
+    tb = get_table()
+    tb.add_row('Тема', str(issue.subject))
+    tb.add_row('Описание', Markdown(issue.description))
+    tb.add_row('Назначена', str(issue.assigned_to))
+    tb.add_row('Статус', str(issue.status))
+    console.print(tb)
+
+
 
 
 @cli.command('open')
